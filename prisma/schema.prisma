@@ -1,0 +1,46 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  githubId  String   @unique
+  username  String
+  avatar    String
+  createdAt DateTime @default(now())
+
+  packs Pack[]
+}
+
+model Pack {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  tags        String[]
+  downloads   Int      @default(0)
+  createdAt   DateTime @default(now())
+
+  author   User   @relation(fields: [authorId], references: [id])
+  authorId String
+
+  textures Texture[]
+
+  @@index([authorId])
+}
+
+model Texture {
+  id   String @id @default(cuid())
+  name String
+  url  String
+
+  pack   Pack   @relation(fields: [packId], references: [id], onDelete: Cascade)
+  packId String
+
+  @@index([packId])
+}
