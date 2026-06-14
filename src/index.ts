@@ -8,6 +8,11 @@ import {
   exchangeCodeForToken,
   fetchGitHubProfile,
 } from "./lib/auth.js";
+import {
+  createSessionCookie,
+  getUserIdFromCookieHeader,
+  clearSessionCookie,
+} from "./lib/session.js";
 
 const PORT = process.env.PORT || 4000;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
@@ -16,8 +21,16 @@ const CALLBACK_URL = `http://localhost:${PORT}/auth/github/callback`;
 const yoga = createYoga({
   schema,
   graphqlEndpoint: "/graphql",
+  cors: {
+    origin: FRONTEND_URL,
+    credentials: true,
+  },
   context: async ({ request }) => {
-    return { prisma, request };
+    const cookieHeader = request.headers.get("cookie") || "";
+    console.log("Cookie header:", cookieHeader);
+    const userId = getUserIdFromCookieHeader(cookieHeader);
+    console.log("Resolved userId:", userId);
+    return { prisma, request, userId };
   },
 });
 
@@ -53,13 +66,27 @@ const server = createServer(async (req, res) => {
         },
       });
 
-      res.writeHead(302, { Location: `${FRONTEND_URL}?userId=${user.id}` });
+      const cookie = createSessionCookie(user.id);
+      console.log("Setting cookie:", cookie);
+      res.writeHead(302, {
+        Location: FRONTEND_URL,
+        "Set-Cookie": cookie,
+      });
       res.end();
     } catch (err) {
       console.error("OAuth error:", err);
       res.writeHead(500);
       res.end("Authentication failed");
     }
+    return;
+  }
+
+  if (url.pathname === "/auth/logout") {
+    res.writeHead(302, {
+      Location: FRONTEND_URL,
+      "Set-Cookie": clearSessionCookie(),
+    });
+    res.end();
     return;
   }
 
