@@ -2,6 +2,7 @@ import { createSchema } from "graphql-yoga";
 import { typeDefs } from "./typeDefs.js";
 import { packResolvers } from "../resolvers/pack.js";
 import { userResolvers } from "../resolvers/user.js";
+import { textureResolvers } from "../resolvers/texture.js";
 
 const resolvers = {
   Query: {
@@ -10,6 +11,7 @@ const resolvers = {
   },
   Mutation: {
     ...packResolvers.Mutation,
+    ...textureResolvers.Mutation,
   },
   Pack: packResolvers.Pack,
   User: userResolvers.User,
