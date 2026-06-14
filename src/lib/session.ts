@@ -11,11 +11,17 @@ const SESSION_SECRET = process.env.SESSION_SECRET!;
 const COOKIE_NAME = "uvcat_session";
 const ONE_WEEK = 60 * 60 * 24 * 7; // seconds
 
+const isProd = process.env.NODE_ENV === "production";
+
 interface SessionPayload {
   userId: string;
 }
 
 // ── Create a signed session cookie header value ──────────────────────────────
+// In production (cross-domain Render <-> Vercel) cookies need SameSite=None
+// + Secure to be sent on cross-site fetch requests. Locally, Lax works fine
+// since localhost:4000 and localhost:5173 are same-site, and Secure would
+// block the cookie on plain http://localhost.
 export function createSessionCookie(userId: string): string {
   const token = jwt.sign({ userId } satisfies SessionPayload, SESSION_SECRET, {
     expiresIn: ONE_WEEK,
@@ -23,8 +29,8 @@ export function createSessionCookie(userId: string): string {
 
   return serialize(COOKIE_NAME, token, {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
     maxAge: ONE_WEEK,
   });
@@ -64,8 +70,8 @@ export function getUserIdFromRequest(req: IncomingMessage): string | undefined {
 export function clearSessionCookie(): string {
   return serialize(COOKIE_NAME, "", {
     httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    sameSite: "lax",
+    secure: isProd,
+    sameSite: isProd ? "none" : "lax",
     path: "/",
     maxAge: 0,
   });
