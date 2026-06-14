@@ -16,7 +16,8 @@ import {
 
 const PORT = process.env.PORT || 4000;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
-const CALLBACK_URL = `http://localhost:${PORT}/auth/github/callback`;
+const BACKEND_URL = process.env.BACKEND_URL || `http://localhost:${PORT}`;
+const CALLBACK_URL = `${BACKEND_URL}/auth/github/callback`;
 
 const yoga = createYoga({
   schema,
